@@ -20,7 +20,6 @@ final class Wordpress_Sleep_Apnea_Quiz {
 	public function __construct() {
 		add_action('wp_enqueue_scripts', array($this, 'register_assets'));
 		add_shortcode(self::SHORTCODE, array($this, 'render_quiz_shortcode'));
-		add_shortcode('wordpress_sleep_apnea_quiz', array($this, 'render_quiz_shortcode'));
 	}
 
 	public function register_assets(): void {

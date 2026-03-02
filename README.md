@@ -14,12 +14,6 @@ WordPress plugin that adds a modern step-by-step sleep apnea risk quiz based on 
 [sleep_apnea_quiz]
 ```
 
-Shortcode alias:
-
-```text
-[wordpress_sleep_apnea_quiz]
-```
-
 ## Scoring Logic
 
 - `0-2` points: low risk of obstructive sleep apnea.
