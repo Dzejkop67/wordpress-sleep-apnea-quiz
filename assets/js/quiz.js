@@ -15,12 +15,12 @@
 			this.answersPanel = this.element.querySelector('.wsaq__answers');
 			this.flow = this.element.querySelector('.wsaq__flow');
 			this.resultPanel = this.element.querySelector('.wsaq__result');
+			this.actions = this.element.querySelector('.wsaq__actions');
 			this.topProgress = this.element.querySelector('.wsaq__top-progress');
 			this.progressFill = this.element.querySelector('.wsaq__top-progress-fill');
 			this.progressSteps = Array.from(this.element.querySelectorAll('.wsaq__progress-step'));
 			this.progressText = this.element.querySelector('.wsaq__progress-text');
 			this.backButton = this.element.querySelector('[data-action="back"]');
-			this.nextButton = this.element.querySelector('[data-action="next"]');
 
 			this.attachEvents();
 			this.render();
@@ -43,18 +43,13 @@
 				}
 			});
 
-			this.nextButton.addEventListener('click', () => {
-				if (this.currentIndex < this.questions.length && this.hasAnswerForCurrentQuestion()) {
-					this.currentIndex += 1;
-					this.hideResult();
-					this.render();
-				}
-			});
-
 			this.progressSteps.forEach((step) => {
 				step.addEventListener('click', () => {
 					const targetIndex = Number(step.dataset.step);
-					const maxReachableIndex = Math.min(this.currentIndex, this.questions.length - 1);
+					const maxReachableIndex = Math.min(
+						Math.max(Object.keys(this.answers).length, this.currentIndex),
+						this.questions.length - 1
+					);
 
 					if (Number.isNaN(targetIndex) || targetIndex > maxReachableIndex) {
 						return;
@@ -78,28 +73,8 @@
 			const question = this.questions[this.currentIndex];
 
 			if (!question) {
-				this.nextButton.hidden = true;
-				this.nextButton.disabled = true;
-				this.stage.innerHTML = `
-					<div class="wsaq__question">
-						<h3 class="wsaq__question-headline">${this.escape(this.config.labels.completionKick)}</h3>
-						<p class="wsaq__question-text">Wszystkie odpowiedzi zostały zapisane. Możesz wrócić do poprzedniego kroku albo sprawdzić wynik.</p>
-						<div class="wsaq__completion-actions">
-							<button type="button" class="wsaq__primary-button wsaq__primary-button--inline" data-action="submit-final">
-								${this.escape(this.config.labels.checkResult)}
-							</button>
-						</div>
-					</div>
-				`;
-
-				const submitFinalButton = this.stage.querySelector('[data-action="submit-final"]');
-				if (submitFinalButton) {
-					submitFinalButton.addEventListener('click', () => {
-						const result = this.calculateResult();
-						this.renderResult(result);
-					});
-				}
-
+				this.stage.innerHTML = '';
+				this.renderResult(this.calculateResult());
 				return;
 			}
 
@@ -137,12 +112,9 @@
 			this.stage.querySelectorAll('.wsaq__option').forEach((button) => {
 				button.addEventListener('click', () => {
 					this.answers[question.id] = button.dataset.answer === '1';
-					this.stage.querySelectorAll('.wsaq__option').forEach((option) => {
-						option.classList.toggle('is-active', option === button);
-					});
 					this.hideResult();
-					this.renderAnswers();
-					this.toggleActions();
+					this.currentIndex = Math.min(this.currentIndex + 1, this.questions.length);
+					this.render();
 				});
 			});
 		}
@@ -180,7 +152,7 @@
 			const answeredCount = Object.keys(this.answers).length;
 			const total = this.questions.length;
 			const currentStep = Math.min(this.currentIndex + 1, total);
-			const completedCount = Math.min(this.currentIndex, total);
+			const completedCount = Math.min(answeredCount, total);
 			const progressValue = total ? (completedCount / total) * 100 : 0;
 
 			if (this.progressText) {
@@ -203,7 +175,7 @@
 			this.progressSteps.forEach((step, index) => {
 				const isComplete = index < completedCount;
 				const isCurrent = this.currentIndex < total && index === this.currentIndex;
-				const isClickable = index <= Math.min(this.currentIndex, total - 1);
+				const isClickable = index <= Math.min(Math.max(answeredCount, this.currentIndex), total - 1);
 
 				step.classList.toggle('is-complete', isComplete);
 				step.classList.toggle('is-current', isCurrent);
@@ -212,24 +184,13 @@
 			});
 		}
 
-		toggleActions() {
-			const isCompletionStep = this.currentIndex >= this.questions.length;
+			toggleActions() {
+				const isCompletionStep = this.currentIndex >= this.questions.length;
 
-			this.backButton.hidden = false;
-			this.backButton.disabled = this.currentIndex === 0;
-			this.nextButton.hidden = isCompletionStep;
-			this.nextButton.disabled = !this.hasAnswerForCurrentQuestion();
-		}
-
-		hasAnswerForCurrentQuestion() {
-			const currentQuestion = this.questions[this.currentIndex];
-
-			if (!currentQuestion) {
-				return false;
+				this.actions.hidden = isCompletionStep;
+				this.backButton.hidden = false;
+				this.backButton.disabled = this.currentIndex === 0;
 			}
-
-			return Object.prototype.hasOwnProperty.call(this.answers, currentQuestion.id);
-		}
 
 		calculateResult() {
 			const score = Object.values(this.answers).filter(Boolean).length;
@@ -268,34 +229,25 @@
 			};
 		}
 
-		renderResult(result) {
-			this.element.classList.add('is-showing-result');
-			this.flow.setAttribute('aria-hidden', 'true');
-			this.resultPanel.hidden = false;
-			this.resultPanel.innerHTML = `
+			renderResult(result) {
+				this.element.classList.add('is-showing-result');
+				this.flow.setAttribute('aria-hidden', 'true');
+				this.resultPanel.hidden = false;
+				this.resultPanel.innerHTML = `
 				<div class="wsaq__result-card wsaq__result-card--${this.escape(result.risk)}">
-					<div class="wsaq__result-meta">
-						<span class="wsaq__result-pill">${this.escape(result.label)}</span>
-						<span class="wsaq__result-score">${this.escape(String(result.score))} / ${this.escape(String(this.questions.length))}</span>
+						<div class="wsaq__result-meta">
+							<span class="wsaq__result-pill">${this.escape(result.label)}</span>
+							<span class="wsaq__result-score">${this.escape(String(result.score))} / ${this.escape(String(this.questions.length))}</span>
+						</div>
+						<h3 class="wsaq__result-title">${this.escape(result.title)}</h3>
+						<p class="wsaq__result-text">${this.escape(result.message)}</p>
+						${result.reason ? `<p class="wsaq__result-reason">${this.escape(result.reason)}</p>` : ''}
+						<div class="wsaq__cta-wrap">
+							${this.renderCta()}
+						</div>
 					</div>
-					<h3 class="wsaq__result-title">${this.escape(result.title)}</h3>
-					<p class="wsaq__result-text">${this.escape(result.message)}</p>
-					${result.reason ? `<p class="wsaq__result-reason">${this.escape(result.reason)}</p>` : ''}
-					<div class="wsaq__cta-wrap">
-						<button type="button" class="wsaq__restart-button">${this.escape(this.config.labels.startAgain)}</button>
-						${this.renderCta()}
-					</div>
-				</div>
-			`;
-
-			const restartButton = this.resultPanel.querySelector('.wsaq__restart-button');
-			restartButton.addEventListener('click', () => {
-				this.answers = {};
-				this.currentIndex = 0;
-				this.hideResult();
-				this.render();
-			});
-		}
+				`;
+			}
 
 		hideResult() {
 			this.element.classList.remove('is-showing-result');
@@ -306,7 +258,7 @@
 
 		renderCta() {
 			return `
-				<a class="wsaq__cta-button" href="/sklep/" target="_blank" rel="noopener noreferrer">
+				<a class="wsaq__cta-button" href="${this.escapeAttribute(this.config.ctaUrl)}" target="_blank" rel="noopener noreferrer">
 					${this.escape(this.config.ctaLabel)}
 				</a>
 			`;

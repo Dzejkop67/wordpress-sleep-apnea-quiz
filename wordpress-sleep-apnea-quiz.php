@@ -50,20 +50,19 @@ final class Wordpress_Sleep_Apnea_Quiz {
 		$questions = $this->get_questions();
 		$config    = array(
 			'quizId'         => $quiz_id,
-			'ctaUrl'         => '/sklep/',
+			'ctaUrl'         => 'http://dev.stopchrap.pl/produkt/konsultacja-laryngologiczna-z-domowym-badaniem-bezdechu/',
 			'ctaLabel'       => 'Wykonaj badanie',
 			'questions'      => $questions,
 			'labels'         => array(
 				'yes'            => 'Tak',
 				'no'             => 'Nie',
-				'next'           => 'Dalej',
 				'back'           => 'Wstecz',
 				'checkResult'    => 'Sprawdź wynik',
 				'startAgain'     => 'Wypełnij ponownie',
 				'progressLabel'  => 'Postęp',
 				'progressStep'   => 'Krok',
 				'summaryTitle'   => 'Podsumowanie odpowiedzi',
-				'completionKick' => 'Kwestionariusz został uzupełniony. Sprawdź wynik, aby zobaczyć interpretację.',
+				'completionKick' => 'Kwestionariusz został uzupełniony.',
 				'questionTag'    => 'Pytanie',
 			),
 			'messages'       => array(
@@ -128,7 +127,6 @@ final class Wordpress_Sleep_Apnea_Quiz {
 
 							<div class="wsaq__actions">
 								<button type="button" class="wsaq__ghost-button" data-action="back" hidden>Wstecz</button>
-								<button type="button" class="wsaq__primary-button" data-action="next" hidden>Dalej</button>
 							</div>
 						</div>
 
